@@ -16,12 +16,12 @@
 // @include       htt*://motherless.com*
 // @include       http://forum.pichunter.com/*
 // @include       http://*retailmenot.com/view/*
-// @include       http://myfotographs.net/Jennie_Ve*
 // @include       http://*.nyud.net*
 // @include       http://www.yourfreeporn.us/video*
 // @include       http://*xtube.com*
 // @include       http://*winbystate.com*
 // @include       http://*imagefap*
+// @include       http://rip.rarchives.com/rips/*
 // ==/UserScript==
 
 var P2_VERSION = 23
@@ -64,6 +64,11 @@ if(IMAGE_NUM_IN_MEMORY > MAX_IMAGES_LOAD_TO_SLIDESHOW){
 }
 
 var supportedSites = [
+    {
+        url:"http://rip.rarchives.com/rips/",
+        inUrl:"rip.rarchives.com",
+        loader: LoaderRarchives
+    },
     {
         url:"http://exposedforums.com/forums/",
         name:"exposedforums",
@@ -137,9 +142,10 @@ var supportedSites = [
     {
         url:"http://imagefap.com/",
         name:"imgfap",
-        inUrl:"imagefap",
+        inUrl:"imagefap.com",
         loader: LoaderImgFap
     }
+    
 
 ];
 
@@ -169,7 +175,7 @@ var style = "\
   .slideshow ul {padding:0;margin:0;}\
   .slideshowInfo {position:absolute;z-index:101;background-color:#c3c3c3; border:1px solid #ccc;}\
   .slideshowInfo .slide-bar { text-align:left;padding:0; position:relative;}\
-  .slideshowInfo .slide-bar .slide-progress {background-color: blue;bottom: 0;display: inline-block;height: 5px;left: 0;position: absolute;}\
+  .slideshowInfo .slide-bar .slide-progress {background-color: #333;bottom: 0;display: inline-block;height: 5px;left: 0;position: absolute;}\
   #unseenThreadPreview li .imgNum {background-color:#aaa;color:white}\
   .p2-dialog {text-align:left;color:black; border-radius: 13px; box-shadow:-2px 2px 2px #C8C8C8; position:absolute; border:1px solid black; width: 800px;z-index:1000;background-color: white; font-size:13px; font-family: arial; padding: 15px 18px;}\
   .p2-dialog .p2-header {text-align:left;color:black; margin: -15px -18px 17px; padding: 12px 18px; background-color: #F3F3F3;border-top-left-radius:13px;border-top-right-radius:13px; font-weight:bold}\
@@ -185,9 +191,9 @@ var style = "\
   .p2-dialog .p2-holder input {width: 100px; margin-left:10px; border: 1px solid #ccc; float:right;}\
   .p2-dialog .p2-holder input:focus {background-color: yellow;}\
   .p2-dialog.p2-donate-dialog{text-align:center;}\
-  .p2-single-preview {width:auto;font-size: 10px; border: 1px dashed #c00;display:block; position:relative; z-index:100;}\
+  .p2-single-preview {width:auto;font-size: 10px; border: 1px dashed #c00;display:block; position:relative; z-index:100;background-color:black;}\
   .p2-single-preview:hover {color:yellow}\
-  .p2-download {color:blue; padding-left: 20px; background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAA3NCSVQICAjb4U/gAAAACXBIWXMAAAsSAAALEgHS3X78AAAAHHRFWHRTb2Z0d2FyZQBBZG9iZSBGaXJld29ya3MgQ1MzmNZGAwAAABV0RVh0Q3JlYXRpb24gVGltZQAyLzE3LzA4IJyqWAAABBF0RVh0WE1MOmNvbS5hZG9iZS54bXAAPD94cGFja2V0IGJlZ2luPSIgICAiIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNC4xLWMwMzQgNDYuMjcyOTc2LCBTYXQgSmFuIDI3IDIwMDcgMjI6MTE6NDEgICAgICAgICI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnhhcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyI+CiAgICAgICAgIDx4YXA6Q3JlYXRvclRvb2w+QWRvYmUgRmlyZXdvcmtzIENTMzwveGFwOkNyZWF0b3JUb29sPgogICAgICAgICA8eGFwOkNyZWF0ZURhdGU+MjAwOC0wMi0xN1QwMjozNjo0NVo8L3hhcDpDcmVhdGVEYXRlPgogICAgICAgICA8eGFwOk1vZGlmeURhdGU+MjAwOC0wMy0yNFQxOTowMDo0Mlo8L3hhcDpNb2RpZnlEYXRlPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIj4KICAgICAgICAgPGRjOmZvcm1hdD5pbWFnZS9wbmc8L2RjOmZvcm1hdD4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgNR1SZAAAAEhQTFRFAAAA////GLMBGLMBH78BKNUALMYBOs0BO9kAS9MAT90AXNkAY+EAbuAAduYAguYAiuoAluwAne4ArvEAsvIAxfcA2fsA7P8AdyP8RwAAAAN0Uk5TAACzqB4m6AAAAGNJREFUGBkFwUEKQjEUBLDMb0HErfc/oVsRhdcxSQAAW7HACBt44kVjAwWwgQLYQCvABk4F2K7gVCza5HpABd4n6bqjgs+R1LpR4TuxQs/VVn8jVtDizBAbjOiAFdAYhAQA8AcebisWSIrTcwAAAABJRU5ErkJggg==) no-repeat 0 1px}\
+  .p2-download {padding-left: 20px; background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAA3NCSVQICAjb4U/gAAAACXBIWXMAAAsSAAALEgHS3X78AAAAHHRFWHRTb2Z0d2FyZQBBZG9iZSBGaXJld29ya3MgQ1MzmNZGAwAAABV0RVh0Q3JlYXRpb24gVGltZQAyLzE3LzA4IJyqWAAABBF0RVh0WE1MOmNvbS5hZG9iZS54bXAAPD94cGFja2V0IGJlZ2luPSIgICAiIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNC4xLWMwMzQgNDYuMjcyOTc2LCBTYXQgSmFuIDI3IDIwMDcgMjI6MTE6NDEgICAgICAgICI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnhhcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyI+CiAgICAgICAgIDx4YXA6Q3JlYXRvclRvb2w+QWRvYmUgRmlyZXdvcmtzIENTMzwveGFwOkNyZWF0b3JUb29sPgogICAgICAgICA8eGFwOkNyZWF0ZURhdGU+MjAwOC0wMi0xN1QwMjozNjo0NVo8L3hhcDpDcmVhdGVEYXRlPgogICAgICAgICA8eGFwOk1vZGlmeURhdGU+MjAwOC0wMy0yNFQxOTowMDo0Mlo8L3hhcDpNb2RpZnlEYXRlPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIj4KICAgICAgICAgPGRjOmZvcm1hdD5pbWFnZS9wbmc8L2RjOmZvcm1hdD4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgNR1SZAAAAEhQTFRFAAAA////GLMBGLMBH78BKNUALMYBOs0BO9kAS9MAT90AXNkAY+EAbuAAduYAguYAiuoAluwAne4ArvEAsvIAxfcA2fsA7P8AdyP8RwAAAAN0Uk5TAACzqB4m6AAAAGNJREFUGBkFwUEKQjEUBLDMb0HErfc/oVsRhdcxSQAAW7HACBt44kVjAwWwgQLYQCvABk4F2K7gVCza5HpABd4n6bqjgs+R1LpR4TuxQs/VVn8jVtDizBAbjOiAFdAYhAQA8AcebisWSIrTcwAAAABJRU5ErkJggg==) no-repeat 0 1px}\
   ul{border:0;padding:0}\
   .p2-sep {border:1px solid blue; padding: 5px; color:white; clear:both; font-weight:bold}\
     .masonry,\
@@ -216,11 +222,11 @@ function runPornifier() {
     log('bootstrapped and ready to roll');
 
     //setup globals from settings:
-    CONTROL.addToConfig('MAX_SLIDESHOW','Slideshow: # of images to load at a time.', 100, "int", function(v){
-        MAX_IMAGES_LOAD_TO_SLIDESHOW = v | 100;
+    CONTROL.addToConfig('MAX_SLIDESHOW','Slideshow: # of images to load at a time.', 50, "int", function(v){
+        MAX_IMAGES_LOAD_TO_SLIDESHOW = v || 50;
     });
-    CONTROL.addToConfig('MAX_SLIDESHOW_IN_MEM','Slideshow: # of images to keep in memory. Make this number smaller if you experience crashes', 40, "int", function(v){
-        IMAGE_NUM_IN_MEMORY = v || 40;
+    CONTROL.addToConfig('MAX_SLIDESHOW_IN_MEM','Slideshow: # of images to keep in memory. Make this number smaller if you experience crashes', 50, "int", function(v){
+        IMAGE_NUM_IN_MEMORY = v || 50;
     });
     CONTROL.addToConfig('THUMB_WIDTH','Preview Thumbnail: width of the preview image in pixels', 230, "int", function(v){
         THUMB_WIDTH = v || 230;
@@ -241,9 +247,9 @@ function runPornifier() {
         if (unsafeWindow.location.href.match(this.inUrl)) {
             siteName = this.name;
             SITE = this;
-
-            buildUI(); // IMPORTANT!!
-
+            if(siteName){
+                buildUI(); // IMPORTANT!!
+            }
             SITE.loader();
             return false;
         }
@@ -374,6 +380,59 @@ function LoaderXtube(){
         });
     })
 }
+function rip(ripUrl, ripLinkCls, ripLinkStyle){ //ripUrl is the rararchive rip url without the http:// part
+    ripLinkCls = ripLinkCls || "";
+    ripLinkStyle = ripLinkStyle || "";
+    var $dl = $("<a href='' target='_blank' style='"+ripLinkStyle+"' class='p2-download "+ripLinkCls+"'>rip</a>");
+    
+    var ripping = false;
+    var canDownload = false
+
+    $dl.click(function(){
+        var timer = null;
+        var opened = false;
+        var showInfo = function(d){
+            var json = JSON.parse(d);
+            if(json.zip){
+                var url = "http://rip.rarchives.com/"+json.zip;
+                $dl.attr("href", url);
+                $dl.text("download: "+json.size);
+                canDownload = true;
+                clearTimeout(timer);
+                timer = null;
+                if(!opened){
+                    opened = true;
+                    $dl.after("<iframe src='"+url+"' style='width:0;height:0;overflow:hidden;'></iframe>");
+                }
+            } else if(json.log){
+                $dl.text(json.log);
+            }
+        }
+        if(!ripping){
+            ripping = true;
+            $dl.text("ripping...");
+            $dl.attr("href", "http://rip.rarchives.com/#http%3A//"+ripUrl);
+            sneakyXHR("http://rip.rarchives.com/rip.cgi?url=http%3A//"+ripUrl+"&start=true", function(d){
+                showInfo(d);
+            });
+            setTimeout(function(){
+                var check = function(){
+                    sneakyXHR("http://rip.rarchives.com/rip.cgi?url=http%3A//"+ripUrl+"/&check=true", function(d){
+                        showInfo(d);
+                    });
+                    if(!canDownload){
+                        timer = setTimeout(check, 1000);
+                    }
+                }
+                if(!canDownload){
+                    check();
+                }
+            }, 1000);
+        }
+        return canDownload;
+    });
+    return $dl;
+}
 function LoaderImgFap(){
 
     if(~unsafeWindow.location.href.indexOf("http://www.imagefap.com"))  { 
@@ -382,54 +441,8 @@ function LoaderImgFap(){
 			var $click = $("<a href='#' style='margin-left:10px; color:red;'>Slideshow</a>");
 			$link.after($click);
 			var galleryId = $link.attr('href').match(/(\d+)/) ? RegExp.$1 : 0;
-			var $dl = $("<a href='' target='_blank' style='margin-left:10px; color:blue;' class='p2-download'>rip</a>");
-			$link.after($dl);
-			var ripping = false;
-			var canDownload = false
-			
-			$dl.click(function(){
-				var timer = null;
-				var opened = false;
-				var showInfo = function(d){
-					var json = JSON.parse(d);
-					if(json.zip){
-						var url = "http://rip.rarchives.com/"+json.zip;
-						$dl.attr("href", url);
-						$dl.text("download: "+json.size);
-						canDownload = true;
-						clearTimeout(timer);
-						timer = null;
-						if(!opened){
-							opened = true;
-							unsafeWindow.open(url);
-						}
-					} else if(json.log){
-						$dl.text(json.log);
-					}
-				}
-				if(!ripping){
-					ripping = true;
-					$dl.text("ripping...");
-					$dl.attr("href", "http://rip.rarchives.com/#http%3A//www.imagefap.com/pictures/"+galleryId+"/");
-					sneakyXHR("http://rip.rarchives.com/rip.cgi?url=http%3A//www.imagefap.com/pictures/"+galleryId+"/&start=true", function(d){
-						showInfo(d);
-					});
-					setTimeout(function(){
-						var check = function(){
-							sneakyXHR("http://rip.rarchives.com/rip.cgi?url=http%3A//www.imagefap.com/pictures/"+galleryId+"/&check=true", function(d){
-								showInfo(d);
-							});
-							if(!canDownload){
-								timer = setTimeout(check, 1000);
-							}
-						}
-						if(!canDownload){
-							check();
-						}
-					}, 1000);
-				}
-				return canDownload;
-			});
+			var $dl = rip("www.imagefap.com/pictures/"+galleryId+"/", "", "margin-left:10px; color:blue;")
+            $link.after($dl);
 			$click.click(function(){
 				var href = $link.attr('href');
 				$click.text("fetching..");
@@ -449,11 +462,6 @@ function LoaderImgFap(){
 				return false;
 			});
 		});
-	}
-	if(~unsafeWindow.location.href.indexOf("http://rip.rarchives.com/rips/")){
-		if($("title").text() == "403 Forbidden"){
-			unsafeWindow.location = unsafeWindow.location.href;
-		}
 	}
 }
 
@@ -619,8 +627,14 @@ function loadImagesFromUrl(url, imgSelector, numImages, desc, cb){
 function LoaderYourFreePorn(){
     removeAds(["#EroIMslider", "div.ads", "iframe"]);
 }
+function LoaderRarchives(){
+    if($("title").text() == "403 Forbidden"){
+        unsafeWindow.location = unsafeWindow.location.href;
+    }
+}
 /////// motherless
 function LoaderMotherless(){
+    
     var start = _.once(startMotherless);
 
     var user = SITE.username || null;
@@ -742,26 +756,29 @@ function startMotherless(){
                 var clicky = $("<a href='javascript:;' class='p2-single-preview'>view full size</a>");
                 $a.after(clicky);
                 var href = $a.attr('href').match(/\/(\w)(\w+)$/) ? [RegExp.$1, RegExp.$2] : false;
+                
                 console.log($a.attr('href'), href)
                 if(href[0] == 'G'){ //we have a group or gallery here, lets provide a better link..
+                    var galleryUrl = "motherless.com"+$a.attr('href');
                     var pages = parseInt($wrap.parent().parent().next().find(".thumbnail-info.right.ellipsis:not(.small)").text().replace(/\D/g,'')) / SITE.IMAGES_PER_PAGE;
-                    var warn =  "";
-                    var superClicky = $("<a href='gopher://donate if you enjoy features like this' class='p2-single-preview'>slideshow gallery"+warn+"</a>");
+                    var superClicky = $("<a href='http://"+galleryUrl+"' class='p2-single-preview'>slideshow gallery</a>");
                     $a.after(superClicky);
                     superClicky.click(function(){
                         superClicky.text("loading...");
                         var url = 'http://motherless.com/GI'+href[1]; //GI = images only
                         //TODO: only do this if pages > 1
                         sneakyXHR(url, function(data){
-                           var $data = $("<div>"+data+"</div>").find("#main_duh"); //apt name
+                           var $data = $("<div>"+data+"</div>").find("#main"); 
                            var links = getPaginationLinks($data);
                            if(links.length == 0){
                                links = [{'url': url, text:"1"}]
                            }
-                           runSuperSlideshow(links);
+                           runSuperSlideshow(links, superClicky);
                         });
                         return false;
                     });
+                    var $ripClick = rip(galleryUrl, "p2-single-preview");
+                    $a.before($ripClick);
                 }
                 clicky.click(function(e, single){
                     var $this = $currentSingle = $(this);
@@ -953,6 +970,12 @@ function startMotherless(){
                 flv = flv.substring(flv.indexOf("file=")+5);
                 flv = flv.substring(0, flv.indexOf("&")) +"?start=0";
             }
+            unsafeWindow.jwplayer && unsafeWindow.jwplayer('mediaspace').addButton("http://www.den4b.com/images/download.png", "Download", function(){
+                window.location = flv;
+            }, "asdfasdfasd2");
+            unsafeWindow.jwplayer && unsafeWindow.jwplayer('mediaspace').play();
+            unsafeWindow.jwplayer && unsafeWindow.jwplayer('mediaspace').pause();
+            
             var $dl = $("<a href='"+flv+"' class='p2-download'>Download Video</a>");
             addMessage($dl);
             sneakyXHR(flv, function(data, response){
@@ -1027,12 +1050,13 @@ function startMotherless(){
         });
     };
 
-    function runSuperSlideshow(pages){
+    function runSuperSlideshow(pages, $link){
 
 
 
         
         var requests = [];
+        var count = 0;
         $.each(pages, function(){
             requests.push({
             'url': this.url,
@@ -1051,6 +1075,8 @@ function startMotherless(){
                         voodoo();
                     });
                 }
+                count++;
+                $link.text("Loading... "+count+"/"+pages.length);
             }});
         });
         chainedGet(requests, false);
@@ -1063,7 +1089,7 @@ function startMotherless(){
         addMessage($link);
         $link.click(function(){
             $link.text("Doing shit. wait.");
-            runSuperSlideshow(SITE.currentPages);
+            runSuperSlideshow(SITE.currentPages, $link);
         });
     };
 
@@ -1181,8 +1207,8 @@ function loadSlideshowBuffered(imgs){
 			text = "Viewing: "+(current+1)+"/"+(len)+buff;
         }
 		var $bar = $("<div class='slide-bar'>"+text+"</div>");
-		var pct = ~~(((current+1)/((len)+buff)) * 100);
-		if(len+buff > 1){
+		var pct = ~~(((current+1)/len) * 100);
+		if(len > 1){
 			$bar.append("<div style='height:5px; position:relative;background-color:#eee;'><span style='width:"+pct+"%;' class='slide-progress'></span></div>");
 		}
         ui.slideshowInfo.empty().append($bar);
