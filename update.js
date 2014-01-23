@@ -1,7 +1,5 @@
 P2_CHANGES = [
-    "motherless: fixed image slideshows, single image views etc",
-    "imagefap: added site, added ability to rip entire galleries as zip and slideshow them",
-    "misc: removied a bunch of sites that stopped working and no one cares about"
+    "rarachives.com/rip/ initial support"
 ];
 
 P2_DONATIONS = {
